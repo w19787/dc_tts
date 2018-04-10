@@ -95,26 +95,30 @@ def spectrogram2wav(mag):
 
 def griffin_lim(spectrogram):
     '''Applies Griffin-Lim's raw.'''
-    X_best = copy.deepcopy(spectrogram)
-    for i in range(hp.n_iter):
-        X_t = invert_spectrogram(X_best)
-        # est = librosa.stft(X_t, hp.n_fft, hp.hop_length, win_length=hp.win_length)
-        est = tf.contrib.signal.stft(X_t, frame_length=hp.win_length, frame_step=hp.hop_length, fft_length=hp.n_fft, window_fn=functools.partial(window_ops.hann_window, periodic=True), pad_end=True)
 
-        phase = est / tf.maximum(1e-8, tf.abs(est))
-        X_best = spectrogram * phase
+    spectrogram = tf.transpose(spectrogram)
+
+    spectrogram = tf.cast(spectrogram, dtype=tf.complex64)  # [t, f]
+    X_best = tf.identity(spectrogram)
+    for i in range(n_iter):
+        X_t = invert_spectrogram(X_best)
+        est = tf.contrib.signal.stft(X_t, hp.win_length, hp.hop_length, hp.n_fft, pad_end=False)  # (1, T, n_fft/2+1)
+        phase = est / tf.cast(tf.maximum(1e-8, tf.abs(est)), tf.complex64)  # [t, f]
+        X_best = spectrogram * phase  # [t, t]
     X_t = invert_spectrogram(X_best)
     y = tf.real(X_t)
 
     return y
 
+
 def invert_spectrogram(spectrogram):
-    '''Applies inverse fft.
-    Args:
-      spectrogram: [1+n_fft//2, t]
     '''
-    # return librosa.istft(spectrogram, hp.hop_length, win_length=hp.win_length, window="hann")
-    return tf.contrib.signal.stft(spectrogram, frame_length=hp.win_length, frame_step=hp.hop_length, fft_length=hp.n_fft, window_fn=functools.partial(window_ops.hann_window, periodic=True))
+    spectrogram: [t, f]
+    '''
+    spectrogram = tf.expand_dims(spectrogram, 0)
+    inversed = tf.contrib.signal.inverse_stft(spectrogram, hp.win_length, hp.hop_length, hp.n_fft)
+    squeezed = tf.squeeze(inversed, 0)
+    return squeezed
 
 def plot_alignment(alignment, gs, dir=hp.logdir):
     """Plots the alignment.
