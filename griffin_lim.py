@@ -30,7 +30,7 @@ def spectrogram2wav(spectrogram):
     X_best = tf.identity(spectrogram)
     for i in range(n_iter):
         X_t = invert_spectrogram(X_best)
-        est = tf.contrib.signal.stft(X_t, frame_length=hp.win_length, frame_step=hp.hop_length, fft_length=hp.n_fft, pad_end=False)  # (1, T, n_fft/2+1)
+        est = tf.contrib.signal.stft(X_t, frame_length=hp.win_length, frame_step=hp.hop_length, fft_length=hp.n_fft, window_fn=functools.partial(tf.contrib.signal.hann_window, periodic=True), pad_end=False)  # (1, T, n_fft/2+1)
         phase = est / tf.cast(tf.maximum(1e-8, tf.abs(est)), tf.complex64)  # [t, f]
         X_best = spectrogram * phase  # [t, t]
     X_t = invert_spectrogram(X_best)
