@@ -77,32 +77,34 @@ def spectrogram2wav(mag):
     mag = mag.T
 
     # de-noramlize
-    mag = (np.clip(mag, 0, 1) * hp.max_db) - hp.max_db + hp.ref_db
+    mag = (tf.clip_by_value(mag, 0, 1) * hp.max_db) - hp.max_db + hp.ref_db
 
     # to amplitude
-    mag = np.power(10.0, mag * 0.05)
+    mag = tf.pow(10.0, mag * 0.05)
 
     # wav reconstruction
     wav = griffin_lim(mag**hp.power)
 
-    # de-preemphasis
-    wav = signal.lfilter([1], [1, -hp.preemphasis], wav)
+    # # de-preemphasis
+    # wav = signal.lfilter([1], [1, -hp.preemphasis], wav)
 
-    # trim
-    wav, _ = librosa.effects.trim(wav)
+    # # trim
+    # wav, _ = librosa.effects.trim(wav)
 
-    return wav.astype(np.float32)
+    return tf.cast(wav, tf.float32)
 
 def griffin_lim(spectrogram):
     '''Applies Griffin-Lim's raw.'''
     X_best = copy.deepcopy(spectrogram)
     for i in range(hp.n_iter):
         X_t = invert_spectrogram(X_best)
-        est = librosa.stft(X_t, hp.n_fft, hp.hop_length, win_length=hp.win_length)
-        phase = est / np.maximum(1e-8, np.abs(est))
+        # est = librosa.stft(X_t, hp.n_fft, hp.hop_length, win_length=hp.win_length)
+        est = tf.contrib.signal.stft(X_t, frame_length=hp.win_length, frame_step=hp.hop_length, fft_length=hp.n_fft, window_fn=functools.partial(window_ops.hann_window, periodic=True), pad_end=True)
+
+        phase = est / tf.maximum(1e-8, tf.abs(est))
         X_best = spectrogram * phase
     X_t = invert_spectrogram(X_best)
-    y = np.real(X_t)
+    y = tf.real(X_t)
 
     return y
 
@@ -111,7 +113,8 @@ def invert_spectrogram(spectrogram):
     Args:
       spectrogram: [1+n_fft//2, t]
     '''
-    return librosa.istft(spectrogram, hp.hop_length, win_length=hp.win_length, window="hann")
+    # return librosa.istft(spectrogram, hp.hop_length, win_length=hp.win_length, window="hann")
+    return tf.contrib.signal.stft(spectrogram, frame_length=hp.win_length, frame_step=hp.hop_length, fft_length=hp.n_fft, window_fn=functools.partial(window_ops.hann_window, periodic=True))
 
 def plot_alignment(alignment, gs, dir=hp.logdir):
     """Plots the alignment.

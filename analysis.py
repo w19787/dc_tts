@@ -50,4 +50,4 @@ def model_info():
 
 if __name__ == '__main__':
     # argument: 1 or 2. 1 for Text2mel, 2 for SSRN.
-    mode()
+    model_info()
