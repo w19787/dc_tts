@@ -17,6 +17,7 @@ from utils import *
 from data_load import load_data
 from scipy.io.wavfile import write
 from tqdm import tqdm
+from griffin_lim import inv_spectrogram
 
 def synthesize():
     # Load data
@@ -60,7 +61,7 @@ def synthesize():
         if not os.path.exists(hp.sampledir): os.makedirs(hp.sampledir)
         for i, mag in enumerate(Z):
             print("Working on file", i+1)
-            wav = spectrogram2wav(mag)
+            wav = sess.run(inv_spectrogram(mag))
             write(hp.sampledir + "/{}.wav".format(i+1), hp.sr, wav)
 
 if __name__ == '__main__':

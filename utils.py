@@ -64,61 +64,61 @@ def get_spectrograms(fpath):
 
     return mel, mag
 
-def spectrogram2wav(mag):
-    '''# Generate wave file from linear magnitude spectrogram
+# def spectrogram2wav(mag):
+#     '''# Generate wave file from linear magnitude spectrogram
 
-    Args:
-      mag: A numpy array of (T, 1+n_fft//2)
+#     Args:
+#       mag: A numpy array of (T, 1+n_fft//2)
 
-    Returns:
-      wav: A 1-D numpy array.
-    '''
-    # transpose
-    mag = mag.T
+#     Returns:
+#       wav: A 1-D numpy array.
+#     '''
+#     # transpose
+#     mag = mag.T
 
-    # de-noramlize
-    mag = (tf.clip_by_value(mag, 0, 1) * hp.max_db) - hp.max_db + hp.ref_db
+#     # de-noramlize
+#     mag = (tf.clip_by_value(mag, 0, 1) * hp.max_db) - hp.max_db + hp.ref_db
 
-    # to amplitude
-    mag = tf.pow(10.0, mag * 0.05)
+#     # to amplitude
+#     mag = tf.pow(10.0, mag * 0.05)
 
-    # wav reconstruction
-    wav = griffin_lim(mag**hp.power)
+#     # wav reconstruction
+#     wav = griffin_lim(mag**hp.power)
 
-    # # de-preemphasis
-    # wav = signal.lfilter([1], [1, -hp.preemphasis], wav)
+#     # # de-preemphasis
+#     # wav = signal.lfilter([1], [1, -hp.preemphasis], wav)
 
-    # # trim
-    # wav, _ = librosa.effects.trim(wav)
+#     # # trim
+#     # wav, _ = librosa.effects.trim(wav)
 
-    return tf.cast(wav, tf.float32)
+#     return tf.cast(wav, tf.float32)
 
-def griffin_lim(spectrogram):
-    '''Applies Griffin-Lim's raw.'''
+# def griffin_lim(spectrogram):
+#     '''Applies Griffin-Lim's raw.'''
 
-    spectrogram = tf.transpose(spectrogram)
+#     spectrogram = tf.transpose(spectrogram)
 
-    spectrogram = tf.cast(spectrogram, dtype=tf.complex64)  # [t, f]
-    X_best = tf.identity(spectrogram)
-    for i in range(n_iter):
-        X_t = invert_spectrogram(X_best)
-        est = tf.contrib.signal.stft(X_t, hp.win_length, hp.hop_length, hp.n_fft, pad_end=False)  # (1, T, n_fft/2+1)
-        phase = est / tf.cast(tf.maximum(1e-8, tf.abs(est)), tf.complex64)  # [t, f]
-        X_best = spectrogram * phase  # [t, t]
-    X_t = invert_spectrogram(X_best)
-    y = tf.real(X_t)
+#     spectrogram = tf.cast(spectrogram, dtype=tf.complex64)  # [t, f]
+#     X_best = tf.identity(spectrogram)
+#     for i in range(n_iter):
+#         X_t = invert_spectrogram(X_best)
+#         est = tf.contrib.signal.stft(X_t, hp.win_length, hp.hop_length, hp.n_fft, pad_end=False)  # (1, T, n_fft/2+1)
+#         phase = est / tf.cast(tf.maximum(1e-8, tf.abs(est)), tf.complex64)  # [t, f]
+#         X_best = spectrogram * phase  # [t, t]
+#     X_t = invert_spectrogram(X_best)
+#     y = tf.real(X_t)
 
-    return y
+#     return y
 
 
-def invert_spectrogram(spectrogram):
-    '''
-    spectrogram: [t, f]
-    '''
-    spectrogram = tf.expand_dims(spectrogram, 0)
-    inversed = tf.contrib.signal.inverse_stft(spectrogram, hp.win_length, hp.hop_length, hp.n_fft)
-    squeezed = tf.squeeze(inversed, 0)
-    return squeezed
+# def invert_spectrogram(spectrogram):
+#     '''
+#     spectrogram: [t, f]
+#     '''
+#     spectrogram = tf.expand_dims(spectrogram, 0)
+#     inversed = tf.contrib.signal.inverse_stft(spectrogram, hp.win_length, hp.hop_length, hp.n_fft)
+#     squeezed = tf.squeeze(inversed, 0)
+#     return squeezed
 
 def plot_alignment(alignment, gs, dir=hp.logdir):
     """Plots the alignment.
