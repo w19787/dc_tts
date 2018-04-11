@@ -16,7 +16,7 @@ from networks import TextEnc, AudioEnc, AudioDec, Attention, SSRN
 import tensorflow as tf
 from utils import *
 import sys
-
+from griffin_lim import inv_spectrogram
 
 class Graph:
     def __init__(self, num=1, mode="train"):
@@ -75,6 +75,9 @@ class Graph:
             # During inference, the predicted melspectrogram values are fed.
             with tf.variable_scope("SSRN"):
                 self.Z_logits, self.Z = SSRN(self.Y, training=training)
+
+            with tf.variable_scope("FINAL"):
+                self.O = inv_spectrogram(self.Z)
 
         with tf.variable_scope("gs"):
             self.global_step = tf.Variable(0, name='global_step', trainable=False)

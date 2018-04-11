@@ -55,13 +55,13 @@ def synthesize():
             prev_max_attentions = _max_attentions[:, j]
 
         # Get magnitude
-        Z = sess.run(g.Z, {g.Y: Y})
+        O = sess.run(g.O, {g.Y: Y})
 
         # Generate wav files
         if not os.path.exists(hp.sampledir): os.makedirs(hp.sampledir)
-        for i, mag in enumerate(Z):
+        for i, wav in enumerate(O):
             print("Working on file", i+1)
-            wav = sess.run(inv_spectrogram(mag))
+            # wav = sess.run(inv_spectrogram(mag))
             write(hp.sampledir + "/{}.wav".format(i+1), hp.sr, wav)
 
 if __name__ == '__main__':

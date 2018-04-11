@@ -24,24 +24,25 @@ def spectrogram2wav(spectrogram):
         squeezed = tf.squeeze(inversed, 0)
         return squeezed
 
-    spectrogram = tf.transpose(spectrogram)
+    # spectrogram = tf.transpose(spectrogram)
 
     spectrogram = tf.cast(spectrogram, dtype=tf.complex64)  # [t, f]
     X_best = tf.identity(spectrogram)
-    for i in range(n_iter):
+    for i in range(hp.n_iter):
         X_t = invert_spectrogram(X_best)
         est = tf.contrib.signal.stft(X_t, frame_length=hp.win_length, frame_step=hp.hop_length, fft_length=hp.n_fft, window_fn=functools.partial(tf.contrib.signal.hann_window, periodic=True), pad_end=False)  # (1, T, n_fft/2+1)
         phase = est / tf.cast(tf.maximum(1e-8, tf.abs(est)), tf.complex64)  # [t, f]
         X_best = spectrogram * phase  # [t, t]
     X_t = invert_spectrogram(X_best)
-    y = tf.real(X_t)
+    y = tf.real(X_t, name='output')
 
     return y
 
 
 def inv_spectrogram(spectrogram):
     S = _db_to_amp(_denormalize(spectrogram) + hp.ref_db)  # Convert back to linear
-    return _inv_preemphasis(spectrogram2wav(S ** 1.5))  # Reconstruct phase
+    # return _inv_preemphasis(spectrogram2wav(S ** 1.5))  # Reconstruct phase
+    return spectrogram2wav(S ** 1.5)
 
 
 def _denormalize(S):
@@ -55,7 +56,7 @@ def _db_to_amp(x):
 def _inv_preemphasis(x):
     N = tf.shape(x)[0]
     i = tf.constant(0)
-    W = tf.zeros(shape=tf.shape(x), dtype=tf.float32)
+    W = tf.zeros(shape=tf.shape(x), dtype=tf.float32, name='output')
 
     def condition(i, y):
         return tf.less(i, N)
