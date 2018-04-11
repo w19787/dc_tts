@@ -18,6 +18,21 @@ from data_load import load_data
 from scipy.io.wavfile import write
 from tqdm import tqdm
 from griffin_lim import inv_spectrogram
+from tensorflow.python.framework import graph_util
+
+
+def freeze(sess, output_file):
+    # Turn all the variables into inline constants inside the graph and save it.
+    frozen_graph_def = graph_util.convert_variables_to_constants(
+      sess, sess.graph_def, ['FINAL/output'])
+    tf.train.write_graph(
+      frozen_graph_def,
+      os.path.dirname(output_file),
+      os.path.basename(output_file),
+      as_text=False)
+    tf.logging.info('Saved frozen graph to %s', output_file)
+
+    return True
 
 def synthesize():
     # Load data
@@ -41,6 +56,7 @@ def synthesize():
         saver2.restore(sess, tf.train.latest_checkpoint(hp.logdir + "-2"))
         print("SSRN Restored!")
 
+        freeze(sess, 'frozen.pb')
         # Feed Forward
         ## mel
         Y = np.zeros((len(L), hp.max_T, hp.n_mels), np.float32)
