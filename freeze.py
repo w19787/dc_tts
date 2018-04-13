@@ -11,7 +11,7 @@ FLAGS = {}
 def lite_freeze(g, sess, output_file):
     flatbuf = tf.contrib.lite.toco_convert(
             input_data=sess.graph_def,
-            input_tensors=[g.L, g.mels, g.prev_max_attentions]
+            input_tensors=[g.L, g.mels, g.prev_max_attentions],
             output_tensors=[g.O]
         )
 
