@@ -34,7 +34,7 @@ def spectrogram2wav(spectrogram):
         phase = est / tf.cast(tf.maximum(1e-8, tf.abs(est)), tf.complex64)  # [t, f]
         X_best = spectrogram * phase  # [t, t]
     X_t = invert_spectrogram(X_best)
-    y = tf.real(X_t, name='output')
+    y = tf.identity(tf.real(X_t), name='output')
 
     return y
 
